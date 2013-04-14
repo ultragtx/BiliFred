@@ -1,0 +1,4 @@
+BiliFred
+========
+
+Bilibili Alfred Workflow
