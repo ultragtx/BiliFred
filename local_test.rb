@@ -491,6 +491,7 @@ class ItemsXMLGenerator
   
   def initialize
     @inner_items_str = ""
+    @image_counter = 0
   end
   
   def addItem(params = {})
@@ -499,13 +500,15 @@ class ItemsXMLGenerator
     title = params[:title]
     subtitle = params[:subtitle]
     
-    itemStr = "\t<item uid=\"#{uid}\" arg=\"#{arg}\">\n\
+    itemStr = "\t<item uid=\"#{@image_counter}\" arg=\"#{arg}\">\n\
     \t\t<title>#{title}</title>\n\
     \t\t<subtitle>#{subtitle}</subtitle>\n\
+    \t\t<icon>#{@image_counter % 5}.png</icon>\n\
     \t</item>\n"
               
-              @inner_items_str << itemStr
-
+    @inner_items_str << itemStr
+    
+    @image_counter += 1;
   end
   
   def to_s
@@ -515,9 +518,9 @@ class ItemsXMLGenerator
 end
 
 item_exp = /<item>(.*?)<\/item>/m
-title_exp = /<title><!\[CDATA\[(.*?)\]\]><\/title>/
+title_exp = /<title>(.*?)<\/title>/
 link_exp = /<link>(.*?)<\/link>/
-desc_exp = /<description><!\[CDATA\[(.*?)\]\]><\/description>/
+desc_exp = /<description>(.*?)<\/description>/
 date_exp = /<pubDate>(.*?)<\/pubDate>/
 cate_exp = /<category>(.*?)<\/category>/
 auth_exp = /<author>(.*?)<\/author>/
@@ -525,7 +528,12 @@ auth_exp = /<author>(.*?)<\/author>/
 
 xmlGen = ItemsXMLGenerator.new
 
+counter = 1
+
 data.scan(item_exp) do |item|
+  if counter > 20
+    break
+  end
   item_str = item.to_s
   item_str =~ title_exp
   title = $1
@@ -538,9 +546,11 @@ data.scan(item_exp) do |item|
   params[:uid] = title
   params[:arg] = link
   params[:title] = title
-  params[:subtitle] = rss_url
+  params[:subtitle] = subtitle
   
   xmlGen.addItem(params)
+  
+  counter += 1
   
   # puts title
   # puts link
