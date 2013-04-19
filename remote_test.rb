@@ -1,22 +1,80 @@
 #encoding: utf-8
 require 'open-uri'
+require 'fileutils'
 
-cmd = "b"
+cmd = :"b"
 
-rss_urls = {
-:d => "http://www.bilibili.tv/rss-1.xml",       # 动画
-:m => "http://www.bilibili.tv/rss-3.xml",       # 音乐
-:g => "http://www.bilibili.tv/rss-4.xml",       # 游戏
-:e => "http://www.bilibili.tv/rss-5.xml",       # 娱乐
-:v => "http://www.bilibili.tv/rss-11.xml",      # 专辑
-:b => "http://www.bilibili.tv/rss-13.xml"       # 新番
+rss_url_aff = 'http://www.bilibili.tv/'
+
+rss_url_sufs = {
+:d => "rss-1.xml",       # 动画
+:m => "rss-3.xml",       # 音乐
+:g => "rss-4.xml",       # 游戏
+:e => "rss-5.xml",       # 娱乐
+:v => "rss-11.xml",      # 专辑
+:b => "rss-13.xml"       # 新番
 }
 
-rss_url = rss_urls[cmd.to_sym]
+unless rss_url_sufs[cmd]
+  # set default to :b
+  cmd = :b
+end
 
-remote = open(URI::encode(rss_url), 'User-Agent' => 'Alfred2')
-data = remote.read
-remote.close
+max_time_interval = 60 * 5  # 5 min
+
+storage_dir = '~/Library/Application Support/Alfred 2/Workflow Data/com.longtimenoc.bilifred/'
+
+FileUtils.mkdir_p storage_dir # create storage dir
+
+rss_file_path = storage_dir + rss_url_sufs[cmd]
+time_file_path = rss_file_path + '.time'
+
+time_file = File.open(time_file_path, "a+")
+time_str = time_file.read
+begin
+  time_old = Time.parse(time_str)
+rescue =>e
+  time_old = Time.new(1997)
+end
+
+time_now = Time.now
+
+data = nil
+
+# puts time_now - time_old
+
+if time_now - time_old < max_time_interval
+  # puts "use local"
+  
+  rss_file = File.open(rss_file_path, "a+")
+  data = rss_file.read
+  rss_file.close
+  time_file.close
+end
+
+if !data || !(data =~ /^<rss(.*?)^<\/rss>/m) # make sure data is valid rss content
+  # puts "use remote"
+  
+  rss_url = rss_url_aff + rss_url_sufs[cmd]
+
+  remote = open(URI::encode(rss_url), 'User-Agent' => 'Alfred2')
+  data = remote.read
+  remote.close
+  
+  # store new time
+  time_file.truncate(0)
+  time_file.seek(0, IO::SEEK_SET)
+  time_file << time_now
+  
+  # store new rss
+  rss_file = File.open(rss_file_path, "a+")
+  rss_file.truncate(0)
+  rss_file.seek(0, IO::SEEK_SET)
+  rss_file << data
+  rss_file.flush
+  rss_file.close
+  time_file.close
+end
 
 # puts data
 
