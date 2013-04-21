@@ -49,7 +49,6 @@ if time_now - time_old < max_time_interval
   rss_file = File.open(rss_file_path, "a+")
   data = rss_file.read
   rss_file.close
-  time_file.close
 end
 
 if !data || !(data =~ /^<rss(.*?)^<\/rss>/m) # make sure data is valid rss content
@@ -73,8 +72,9 @@ if !data || !(data =~ /^<rss(.*?)^<\/rss>/m) # make sure data is valid rss conte
   rss_file << data
   rss_file.flush
   rss_file.close
-  time_file.close
 end
+
+time_file.close
 
 # puts data
 
