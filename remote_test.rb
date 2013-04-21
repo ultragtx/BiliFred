@@ -4,6 +4,8 @@ require 'fileutils'
 
 cmd = :"b"
 
+results_limit = 20
+
 rss_url_aff = 'http://www.bilibili.tv/'
 
 rss_url_sufs = {
@@ -22,14 +24,14 @@ end
 
 max_time_interval = 60 * 5  # 5 min
 
-storage_dir = '~/Library/Application Support/Alfred 2/Workflow Data/com.longtimenoc.bilifred/'
+storage_dir = File.expand_path('~/Library/Application Support/Alfred 2/Workflow Data/com.longtimenoc.bilifred')
 
 FileUtils.mkdir_p storage_dir # create storage dir
 
-rss_file_path = storage_dir + rss_url_sufs[cmd]
+rss_file_path = storage_dir + '/' + rss_url_sufs[cmd]
 time_file_path = rss_file_path + '.time'
 
-time_file = File.open(time_file_path, "a+")
+time_file = File.open(time_file_path, "r+")
 time_str = time_file.read
 begin
   time_old = Time.parse(time_str)
@@ -46,14 +48,15 @@ data = nil
 if time_now - time_old < max_time_interval
   # puts "use local"
   
-  rss_file = File.open(rss_file_path, "a+")
+  rss_file = File.open(rss_file_path, "r")
   data = rss_file.read
   rss_file.close
+  # puts data
 end
 
 if !data || !(data =~ /^<rss(.*?)^<\/rss>/m) # make sure data is valid rss content
   # puts "use remote"
-  
+
   rss_url = rss_url_aff + rss_url_sufs[cmd]
 
   remote = open(URI::encode(rss_url), 'User-Agent' => 'Alfred2')
@@ -66,7 +69,7 @@ if !data || !(data =~ /^<rss(.*?)^<\/rss>/m) # make sure data is valid rss conte
   time_file << time_now
   
   # store new rss
-  rss_file = File.open(rss_file_path, "a+")
+  rss_file = File.open(rss_file_path, "w")
   rss_file.truncate(0)
   rss_file.seek(0, IO::SEEK_SET)
   rss_file << data
@@ -123,7 +126,7 @@ xmlGen = ItemsXMLGenerator.new
 counter = 1
 
 data.scan(item_exp) do |item|
-  if counter > 10
+  if counter > results_limit
     break
   end
   item_str = item.to_s
@@ -150,4 +153,18 @@ end
 
 
 puts xmlGen
+
+if xmlGen.to_s.length == 0
+err = <<ERROR
+<?xml version="1.0"?>
+<items>
+	<item uid="1" arg="http://www.bilibili.tv/video/av536726/">
+    		<title>Error</title>
+    		<subtitle></subtitle>
+    		<icon>0.png</icon>
+    	</item>
+</items>
+ERROR
+
+end
 
