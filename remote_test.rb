@@ -1,8 +1,11 @@
+#!/usr/bin/ruby
 #encoding: utf-8
 require 'open-uri'
 require 'fileutils'
 
 cmd = :"e"
+
+debug_mode = true
 
 results_limit = 20
 
@@ -30,6 +33,7 @@ FileUtils.mkdir_p storage_dir # create storage dir
 
 rss_file_path = storage_dir + '/' + rss_url_sufs[cmd]
 time_file_path = rss_file_path + '.time'
+debug_file_path = rss_file_path + '.debug'
 
 time_file = File.open(time_file_path, "a+")
 time_file.seek(0, IO::SEEK_SET)
@@ -97,11 +101,12 @@ class ItemsXMLGenerator
     title = params[:title]
     subtitle = params[:subtitle]
     
-    itemStr = "\t<item uid=\"#{@image_counter + 1}\" arg=\"#{arg}\">\n\
-    \t\t<title>#{title}</title>\n\
-    \t\t<subtitle>#{subtitle}</subtitle>\n\
-    \t\t<icon>#{@image_counter % 5}.png</icon>\n\
-    \t</item>\n"
+    itemStr = "\
+      <item arg=\"#{arg}\">\n\
+        <title>#{title}</title>\n\
+        <subtitle>#{subtitle}</subtitle>\n\
+        <icon>#{@image_counter % 5}.png</icon>\n\
+      </item>\n"
               
     @inner_items_str << itemStr
     
@@ -109,7 +114,7 @@ class ItemsXMLGenerator
   end
   
   def to_s
-    "<?xml version=\"1.0\"?>\n<items>\n#{@inner_items_str}</items>"
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<items>\n#{@inner_items_str}</items>"
   end
   
 end
@@ -153,6 +158,13 @@ data.scan(item_exp) do |item|
   # puts link
 end
 
+if debug_mode
+  debug_file = File.open(debug_file_path, "w")
+  debug_file << Time.now
+  debug_file << "\n"
+  debug_file << xmlGen
+  debug_file.close
+end
 
 puts xmlGen
 
