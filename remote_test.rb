@@ -2,7 +2,7 @@
 require 'open-uri'
 require 'fileutils'
 
-cmd = :"b"
+cmd = :"e"
 
 results_limit = 20
 
@@ -31,7 +31,8 @@ FileUtils.mkdir_p storage_dir # create storage dir
 rss_file_path = storage_dir + '/' + rss_url_sufs[cmd]
 time_file_path = rss_file_path + '.time'
 
-time_file = File.open(time_file_path, "r+")
+time_file = File.open(time_file_path, "a+")
+time_file.seek(0, IO::SEEK_SET)
 time_str = time_file.read
 begin
   time_old = Time.parse(time_str)
@@ -48,7 +49,8 @@ data = nil
 if time_now - time_old < max_time_interval
   # puts "use local"
   
-  rss_file = File.open(rss_file_path, "r")
+  rss_file = File.open(rss_file_path, "a+")
+  rss_file.seek(0, IO::SEEK_SET)
   data = rss_file.read
   rss_file.close
   # puts data
@@ -160,11 +162,10 @@ err = <<ERROR
 <items>
 	<item uid="1" arg="http://www.bilibili.tv/video/av536726/">
     		<title>Error</title>
-    		<subtitle></subtitle>
+    		<subtitle>result length 0</subtitle>
     		<icon>0.png</icon>
     	</item>
 </items>
 ERROR
 
 end
-
